@@ -30,8 +30,13 @@ console.log('📦 Installing production dependencies...');
 try {
   execSync('cd backend && npm install --omit=dev', { stdio: 'inherit' });
   console.log('✅ Dependencies installed');
+  
+  // Пересобираем нативные модули (bcrypt) для текущей платформы
+  console.log('🔧 Rebuilding native modules for current platform...');
+  execSync('cd backend && npm rebuild bcrypt --build-from-source', { stdio: 'inherit' });
+  console.log('✅ Native modules rebuilt');
 } catch (error) {
-  console.error('❌ Dependencies installation failed:', error.message);
+  console.error('❌ Installation/rebuild failed:', error.message);
   process.exit(1);
 }
 
