@@ -14,9 +14,8 @@ try {
   console.log('🔨 Building backend...');
   execSync('cd backend && npm ci --only=production && npm install --save-dev typescript && npm run build', { stdio: 'inherit' });
   
-  // Frontend
-  console.log('🎨 Building frontend...');
-  execSync('cd frontend && npm ci && npm run build', { stdio: 'inherit' });
+  // Frontend - пропускаем сборку, используем готовый dist
+  console.log('⏭️  Skipping frontend build (using pre-built dist)...');
   
   console.log('✅ Build complete!');
 } catch (error) {
