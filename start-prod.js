@@ -5,8 +5,21 @@ const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, 'backend', '.env') });
 
 console.log('🚀 Starting SakevaNews (Production)...');
-console.log('⚠️  Make sure you have built the project first with: npm run build:full');
+console.log('🔄 Building frontend with latest changes...');
 console.log('');
+
+const { execSync } = require('child_process');
+
+// Пересобираем frontend при каждом запуске
+try {
+  execSync('cd frontend && npm run build', { 
+    stdio: 'inherit'
+  });
+  console.log('✅ Frontend build completed');
+} catch (error) {
+  console.error('❌ Frontend build failed:', error.message);
+  process.exit(1);
+}
 
 // Проверка наличия dist папок
 const backendDist = path.join(__dirname, 'backend', 'dist', 'server.js');
@@ -18,7 +31,7 @@ if (!fs.existsSync(backendDist)) {
 }
 
 if (!fs.existsSync(frontendDist)) {
-  console.error('❌ Frontend не собран! Запустите: cd frontend && npm run build');
+  console.error('❌ Frontend не собран после билда!');
   process.exit(1);
 }
 
@@ -29,7 +42,6 @@ async function startServer() {
   try {
     // Запускаем миграцию
     console.log('🔄 Running database migration...');
-    const { execSync } = require('child_process');
     execSync('cd backend && npx ts-node scripts/add-user-role-column.ts', { 
       stdio: 'inherit',
       env: { ...process.env, NODE_ENV: 'production' }
