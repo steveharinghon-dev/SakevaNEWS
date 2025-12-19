@@ -2,44 +2,94 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { User, UserRole } from '../models/User';
+import { APP_CONSTANTS } from '../config/constants';
+import rateLimit from 'express-rate-limit';
+import validator from 'validator';
 
 const router = Router();
 
+// Rate limiter для auth роутов - защита от брутфорса
+const authLimiter = rateLimit({
+  windowMs: APP_CONSTANTS.RATE_LIMIT.AUTH_WINDOW_MS,
+  max: APP_CONSTANTS.RATE_LIMIT.AUTH_MAX_ATTEMPTS,
+  message: 'Слишком много попыток входа, попробуйте позже',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Проверка JWT секрета при загрузке модуля
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < APP_CONSTANTS.AUTH.JWT_MIN_SECRET_LENGTH) {
+  console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: JWT_SECRET не задан или слишком короткий!');
+  console.error(`   JWT_SECRET должен быть минимум ${APP_CONSTANTS.AUTH.JWT_MIN_SECRET_LENGTH} символов`);
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set and at least 32 characters long');
+  }
+}
+
 // Регистрация
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { nick, password } = req.body;
 
-    if (!nick || !password) {
-      return res.status(400).json({ message: 'Укажите ник и пароль' });
+    // Валидация типов
+    if (!nick || !password || typeof nick !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Неверный формат данных' });
     }
 
-    if (nick.length < 3 || nick.length > 20) {
-      return res.status(400).json({ message: 'Ник должен быть от 3 до 20 символов' });
+    const sanitizedNick = validator.trim(nick);
+
+    // Валидация ника
+    if (sanitizedNick.length < APP_CONSTANTS.AUTH.MIN_NICK_LENGTH || 
+        sanitizedNick.length > APP_CONSTANTS.AUTH.MAX_NICK_LENGTH) {
+      return res.status(400).json({ 
+        message: `Ник должен быть от ${APP_CONSTANTS.AUTH.MIN_NICK_LENGTH} до ${APP_CONSTANTS.AUTH.MAX_NICK_LENGTH} символов` 
+      });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Пароль должен быть минимум 6 символов' });
+    // Проверка на спецсимволы в нике
+    if (!/^[a-zA-Z0-9_-]+$/.test(sanitizedNick)) {
+      return res.status(400).json({ 
+        message: 'Ник может содержать только буквы, цифры, _ и -' 
+      });
     }
 
-    const existingUser = await User.findOne({ where: { nick } });
+    // Усиленная валидация пароля
+    if (password.length < APP_CONSTANTS.AUTH.MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ 
+        message: `Пароль должен быть минимум ${APP_CONSTANTS.AUTH.MIN_PASSWORD_LENGTH} символов` 
+      });
+    }
+
+    // Проверка сложности пароля
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      return res.status(400).json({ 
+        message: 'Пароль должен содержать заглавные и строчные буквы, и цифры' 
+      });
+    }
+
+    const existingUser = await User.findOne({ where: { nick: sanitizedNick } });
     if (existingUser) {
       return res.status(400).json({ message: 'Этот ник уже занят' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Увеличенные раунды для безопасности
+    const hashedPassword = await bcrypt.hash(password, APP_CONSTANTS.AUTH.BCRYPT_ROUNDS);
 
     const user = await User.create({
-      nick,
+      nick: sanitizedNick,
       password: hashedPassword,
       role: UserRole.USER
     });
 
-    const secret = String(process.env.JWT_SECRET || 'default_secret');
     const token = jwt.sign(
       { id: user.id, nick: user.nick, role: user.role },
-      secret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
+      JWT_SECRET!,
+      { expiresIn: APP_CONSTANTS.AUTH.JWT_EXPIRES_IN }
     );
 
     res.status(201).json({
@@ -58,16 +108,28 @@ router.post('/register', async (req, res) => {
 });
 
 // Логин
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { nick, password } = req.body;
 
-    if (!nick || !password) {
-      return res.status(400).json({ message: 'Укажите ник и пароль' });
+    // Валидация типов
+    if (!nick || !password || typeof nick !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Неверный формат данных' });
     }
 
-    const user = await User.findOne({ where: { nick } });
-    if (!user) {
+    const sanitizedNick = validator.trim(nick);
+
+    const user = await User.findOne({ where: { nick: sanitizedNick } });
+    
+    // ЗАЩИТА ОТ TIMING ATTACK: всегда делаем bcrypt.compare, даже если юзер не найден
+    // Используем фейковый хеш с правильным количеством раундов
+    const fakeHash = '$2a$12$' + 'X'.repeat(53); // Валидный bcrypt хеш
+    const isPasswordValid = user 
+      ? await bcrypt.compare(password, user.password)
+      : await bcrypt.compare(password, fakeHash);
+
+    // ОДИНАКОВОЕ сообщение для обоих случаев - защита от enumeration
+    if (!user || !isPasswordValid) {
       return res.status(401).json({ message: 'Неверный ник или пароль' });
     }
 
@@ -75,16 +137,10 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Ваш аккаунт заблокирован' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Неверный ник или пароль' });
-    }
-
-    const secret = String(process.env.JWT_SECRET || 'default_secret');
     const token = jwt.sign(
       { id: user.id, nick: user.nick, role: user.role },
-      secret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
+      JWT_SECRET!,
+      { expiresIn: APP_CONSTANTS.AUTH.JWT_EXPIRES_IN }
     );
 
     res.json({
@@ -112,8 +168,7 @@ router.get('/me', async (req, res) => {
       return res.status(401).json({ message: 'Требуется аутентификация' });
     }
 
-    const secret = String(process.env.JWT_SECRET || 'default_secret');
-    const decoded = jwt.verify(token, secret) as any;
+    const decoded = jwt.verify(token, JWT_SECRET!) as any;
     const user = await User.findByPk(decoded.id, {
       attributes: { exclude: ['password'] }
     });

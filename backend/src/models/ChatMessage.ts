@@ -51,6 +51,7 @@ ChatMessage.init(
       allowNull: false,
       validate: {
         len: [1, 1000],
+        notEmpty: true,
       },
     },
     isAnonymous: {
@@ -59,14 +60,35 @@ ChatMessage.init(
       defaultValue: false,
     },
     userRole: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
+      type: DataTypes.ENUM('owner', 'admin', 'user'),
+      allowNull: false,
+      defaultValue: 'user',
+      validate: {
+        isIn: [['owner', 'admin', 'user']]
+      }
     },
   },
   {
     sequelize,
     tableName: 'chat_messages',
     timestamps: true,
+    indexes: [
+      // Индекс для истории чата (сортировка по дате)
+      {
+        name: 'idx_chat_created',
+        fields: ['createdAt'],
+      },
+      // Индекс для поиска по пользователю
+      {
+        name: 'idx_chat_user',
+        fields: ['userId'],
+      },
+      // Композитный индекс для анонимных vs зарегистрированных
+      {
+        name: 'idx_chat_anonymous_created',
+        fields: ['isAnonymous', 'createdAt'],
+      },
+    ],
   }
 );
 
