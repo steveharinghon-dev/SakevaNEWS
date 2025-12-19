@@ -35,16 +35,25 @@ const httpServer = createServer(app);
 app.set('trust proxy', true);
 
 // Улучшенная настройка CORS
+// Парсим FRONTEND_URL (может быть список через запятую)
+const frontendUrlEnv = process.env.FRONTEND_URL || '';
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []
+  ? frontendUrlEnv.split(',').map(url => url.trim()).filter(Boolean)
   : ['http://localhost:5173'];
+
+console.log('🌐 Allowed CORS origins:', allowedOrigins);
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Разрешаем запросы без origin (например, мобильные приложения или Postman)
+    // Разрешаем запросы без origin (например, server-side requests, Postman)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // Для монолита: разрешаем все если FRONTEND_URL пустой в production
+    if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.warn(`⚠️  Blocked CORS request from origin: ${origin}`);
