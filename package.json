@@ -1,0 +1,23 @@
+{
+  "name": "sakevanews",
+  "version": "1.0.0",
+  "description": "SakevaNews - Full-stack новостной сайт с real-time чатом",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js",
+    "start:prod": "node start-prod.js",
+    "build:full": "cd backend && npm install && npm run build && cd ../frontend && npm install && npm run build",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": [
+    "sakeva",
+    "news",
+    "fullstack"
+  ],
+  "author": "Sakeva Team",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
