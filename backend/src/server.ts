@@ -19,6 +19,9 @@ const app: Express = express();
 const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
 
+// Trust proxy (для работы за Pterodactyl/Cloudflare)
+app.set('trust proxy', true);
+
 // Socket.IO setup
 const io = new SocketIOServer(httpServer, {
   cors: {
