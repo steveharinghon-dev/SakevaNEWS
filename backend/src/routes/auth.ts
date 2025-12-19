@@ -15,6 +15,8 @@ const authLimiter = rateLimit({
   message: 'Слишком много попыток входа, попробуйте позже',
   standardHeaders: true,
   legacyHeaders: false,
+  // Отключаем проверку trust proxy для работы за reverse proxy
+  validate: { trustProxy: false },
 });
 
 // Проверка JWT секрета при загрузке модуля

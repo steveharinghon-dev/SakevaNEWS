@@ -32,7 +32,8 @@ const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
 
 // Trust proxy (для работы за Pterodactyl/Cloudflare)
-app.set('trust proxy', true);
+// Указываем количество прокси (1 = один reverse proxy перед приложением)
+app.set('trust proxy', 1);
 
 // Улучшенная настройка CORS
 // Парсим FRONTEND_URL (может быть список через запятую)
@@ -81,6 +82,8 @@ const limiter = rateLimit({
   message: 'Слишком много запросов, попробуйте позже',
   standardHeaders: true,
   legacyHeaders: false,
+  // Отключаем проверку trust proxy для работы за reverse proxy
+  validate: { trustProxy: false },
 });
 app.use('/api/', limiter);
 
