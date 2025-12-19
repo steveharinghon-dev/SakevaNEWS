@@ -25,9 +25,9 @@ const Chat: React.FC = () => {
 
   // Подключение к Socket.IO
   useEffect(() => {
-    // В продакшене Socket.IO будет на том же домене с портом, в dev - на localhost:5000
+    // В продакшене Socket.IO будет на том же домене, в dev - на localhost:5000
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 
-      (import.meta.env.PROD ? `${window.location.protocol}//${window.location.hostname}:20533` : 'http://localhost:5000');
+      (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
     
     const socketInstance = io(socketUrl, {
       transports: ['polling', 'websocket'],
