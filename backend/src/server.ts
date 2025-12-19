@@ -128,11 +128,10 @@ io.on('connection', (socket) => {
 const startServer = async () => {
   try {
     await connectDB();
-    httpServer.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📡 API: http://localhost:${PORT}/api`);
-      console.log(`💬 Chat: Socket.IO enabled`);
-    });
+    httpServer.listen(PORT, '0.0.0.0');
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 API: http://0.0.0.0:${PORT}/api`);
+    console.log(`💬 Chat: Socket.IO enabled on all interfaces`);
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
