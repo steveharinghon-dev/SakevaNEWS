@@ -5,15 +5,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, 'backend', '.env') });
 
 console.log('🚀 Starting SakevaNews...');
-
-// Подтягиваем последние изменения из Git
-try {
-  console.log('📥 Pulling latest changes from Git...');
-  execSync('git pull origin master', { stdio: 'inherit' });
-  console.log('✅ Git pull completed');
-} catch (error) {
-  console.log('⚠️  Git pull failed or no changes:', error.message);
-}
+console.log('📌 Version check: Chat with role icons (FaCrown, FaShield, FaUser)');
 
 // Сборка проекта
 console.log('📦 Building project...');
