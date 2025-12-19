@@ -7,19 +7,31 @@ require('dotenv').config({ path: path.join(__dirname, 'backend', '.env') });
 console.log('🚀 Starting SakevaNews...');
 console.log('📌 Version check: Chat with role icons (FaCrown, FaShield, FaUser)');
 
-// Сборка проекта
-console.log('📦 Building project...');
+// Проверка наличия готовых dist папок
+console.log('📦 Checking pre-built files...');
+const fs = require('fs');
+const backendDist = path.join(__dirname, 'backend', 'dist', 'server.js');
+const frontendDist = path.join(__dirname, 'frontend', 'dist', 'index.html');
+
+if (!fs.existsSync(backendDist)) {
+  console.error('❌ Backend not built! Run locally: cd backend && npm run build');
+  process.exit(1);
+}
+
+if (!fs.existsSync(frontendDist)) {
+  console.error('❌ Frontend not built! Run locally: cd frontend && npm run build');
+  process.exit(1);
+}
+
+console.log('✅ Pre-built files found');
+
+// Устанавливаем production зависимости
+console.log('📦 Installing production dependencies...');
 try {
-  // Backend
-  console.log('🔨 Building backend...');
-  execSync('cd backend && npm ci && npm run build', { stdio: 'inherit' });
-  
-  // Frontend - пропускаем сборку, используем готовый dist
-  console.log('⏭️  Skipping frontend build (using pre-built dist)...');
-  
-  console.log('✅ Build complete!');
+  execSync('cd backend && npm install --omit=dev', { stdio: 'inherit' });
+  console.log('✅ Dependencies installed');
 } catch (error) {
-  console.error('❌ Build failed:', error.message);
+  console.error('❌ Dependencies installation failed:', error.message);
   process.exit(1);
 }
 
