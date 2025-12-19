@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMessageCircle, FiX, FiSend, FiUser, FiCrown, FiShield } from 'react-icons/fi';
+import { FiMessageCircle, FiX, FiSend } from 'react-icons/fi';
+import { FaCrown, FaShield, FaUser } from 'react-icons/fa';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -87,11 +88,11 @@ const Chat: React.FC = () => {
     
     switch (role) {
       case 'owner':
-        return <FiCrown className="text-yellow-400" size={14} title="Владелец" />;
+        return <FaCrown className="text-yellow-400" size={14} title="Владелец" />;
       case 'admin':
-        return <FiShield className="text-blue-400" size={14} title="Администратор" />;
+        return <FaShield className="text-blue-400" size={14} title="Администратор" />;
       case 'user':
-        return <FiUser className="text-gray-400" size={14} title="Пользователь" />;
+        return <FaUser className="text-gray-400" size={14} title="Пользователь" />;
       default:
         return null;
     }
