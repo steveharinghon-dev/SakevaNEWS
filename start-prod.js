@@ -22,9 +22,26 @@ if (!fs.existsSync(frontendDist)) {
   process.exit(1);
 }
 
-// Запуск сервера
+// Запуск миграции и сервера
 console.log('✅ Build files found');
-console.log('🌐 Starting server...');
-process.env.NODE_ENV = 'production';
 
-require(backendDist);
+async function startServer() {
+  try {
+    // Запускаем миграцию
+    console.log('🔄 Running database migration...');
+    const { execSync } = require('child_process');
+    execSync('cd backend && npx ts-node scripts/add-user-role-column.ts', { 
+      stdio: 'inherit',
+      env: { ...process.env, NODE_ENV: 'production' }
+    });
+    console.log('✅ Migration completed');
+  } catch (error) {
+    console.log('⚠️  Migration already applied or error:', error.message);
+  }
+
+  console.log('🌐 Starting server...');
+  process.env.NODE_ENV = 'production';
+  require(backendDist);
+}
+
+startServer();
