@@ -23,6 +23,18 @@ try {
   process.exit(1);
 }
 
+// Запуск миграции
+try {
+  console.log('🔄 Running database migration...');
+  execSync('cd backend && npx ts-node scripts/add-user-role-column.ts', { 
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'production' }
+  });
+  console.log('✅ Migration completed');
+} catch (error) {
+  console.log('⚠️  Migration already applied or error:', error.message);
+}
+
 // Запуск сервера
 console.log('🌐 Starting server...');
 process.env.NODE_ENV = 'production';
