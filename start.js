@@ -28,15 +28,15 @@ console.log('✅ Pre-built files found');
 // Устанавливаем production зависимости
 console.log('📦 Installing production dependencies...');
 try {
-  execSync('cd backend && npm install --omit=dev', { stdio: 'inherit' });
-  console.log('✅ Dependencies installed');
+  // Удаляем bcrypt и переустанавливаем для текущей платформы
+  console.log('🔧 Removing old bcrypt module...');
+  execSync('cd backend && rm -rf node_modules/bcrypt', { stdio: 'inherit' });
   
-  // Пересобираем нативные модули (bcrypt) для текущей платформы
-  console.log('🔧 Rebuilding native modules for current platform...');
-  execSync('cd backend && npm rebuild bcrypt --build-from-source', { stdio: 'inherit' });
-  console.log('✅ Native modules rebuilt');
+  console.log('📦 Installing dependencies (bcrypt will rebuild)...');
+  execSync('cd backend && npm install --omit=dev', { stdio: 'inherit' });
+  console.log('✅ Dependencies installed and native modules rebuilt');
 } catch (error) {
-  console.error('❌ Installation/rebuild failed:', error.message);
+  console.error('❌ Installation failed:', error.message);
   process.exit(1);
 }
 
