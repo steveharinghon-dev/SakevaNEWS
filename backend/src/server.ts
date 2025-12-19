@@ -98,14 +98,38 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SakevaNews API is running' });
 });
 
+// Глобальный обработчик ошибок для API (ВАЖНО: до статики!)
+app.use('/api/*', errorHandler);
+
 // Serve static files from React app in production
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = path.join(__dirname, '../../frontend/dist');
-  app.use(express.static(frontendPath));
+  
+  // Проверка существования frontend/dist
+  const fs = require('fs');
+  if (!fs.existsSync(frontendPath)) {
+    console.error('❌ ОШИБКА: frontend/dist не найден!');
+    console.error(`   Путь: ${frontendPath}`);
+    console.error('   Запустите: cd frontend && npm run build');
+  } else {
+    console.log('✅ Frontend dist найден:', frontendPath);
+  }
+  
+  app.use(express.static(frontendPath, {
+    maxAge: '1d', // Кеширование статики на 1 день
+    etag: true,
+    lastModified: true,
+  }));
   
   // Handle React routing - return index.html for all non-API routes
+  // ВАЖНО: это должно быть последним роутом!
   app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+      if (err) {
+        console.error('Error sending index.html:', err);
+        res.status(500).send('Failed to load application');
+      }
+    });
   });
 }
 
@@ -249,9 +273,6 @@ io.on('connection', (socket) => {
     console.log(`💬 User disconnected: ${socket.id}`);
   });
 });
-
-// Глобальный обработчик ошибок (должен быть после всех роутов)
-app.use(errorHandler);
 
 // Connect to database and start server
 const startServer = async () => {
