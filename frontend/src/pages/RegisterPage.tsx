@@ -76,7 +76,7 @@ const RegisterPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-sakeva-pink focus:outline-none transition"
-                placeholder="Минимум 6 символов"
+                placeholder="Минимум 8 символов (заглавные, строчные, цифры)"
                 minLength={6}
                 required
               />

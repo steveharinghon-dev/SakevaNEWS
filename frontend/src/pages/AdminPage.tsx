@@ -113,6 +113,17 @@ const AdminPage: React.FC = () => {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/users/${id}`),
+    onSuccess: () => {
+      toast.success('Пользователь удалён');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Ошибка удаления пользователя');
+    },
+  });
+
   // Получить все новости для управления (только owner)
   const { data: manageNewsData } = useQuery<{ news: News[] }>({
     queryKey: ['manageNews', manageSearch],
@@ -272,60 +283,94 @@ const AdminPage: React.FC = () => {
         {activeTab === 'users' && user?.role === 'owner' && (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <table className="w-full">
-              <thead className="bg-sakeva-pink text-white">
+              <thead className="bg-gradient-to-r from-sakeva-pink to-pink-500 text-white">
                 <tr>
-                  <th className="px-6 py-3 text-left">Ник</th>
-                  <th className="px-6 py-3 text-left">Роль</th>
-                  <th className="px-6 py-3 text-left">Статус</th>
-                  <th className="px-6 py-3 text-left">Действия</th>
+                  <th className="px-6 py-4 text-left font-semibold">Ник</th>
+                  <th className="px-6 py-4 text-left font-semibold">Роль</th>
+                  <th className="px-6 py-4 text-left font-semibold">Статус</th>
+                  <th className="px-6 py-4 text-center font-semibold">Действия</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {usersData?.users.map((u) => (
-                  <tr key={u.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-4">{u.nick}</td>
+                  <motion.tr 
+                    key={u.id} 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-900">{u.nick}</td>
                     <td className="px-6 py-4">
                       {u.nick !== 'sakeva_owner' && u.nick !== 'Mexa' && user?.role === 'owner' ? (
                         <select
                           value={u.role}
                           onChange={(e) => changeRoleMutation.mutate({ id: String(u.id), role: e.target.value })}
-                          className="px-3 py-1 border rounded"
+                          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sakeva-pink focus:border-transparent transition"
                         >
-                          <option value="user">User</option>
-                          <option value="admin">Admin</option>
+                          <option value="user">👤 Пользователь</option>
+                          <option value="admin">🛡️ Администратор</option>
                         </select>
                       ) : (
-                        <span className={`font-bold ${u.role === 'owner' ? 'text-sakeva-pink' : 'text-gray-700'}`}>
-                          {u.role.toUpperCase()}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                          u.role === 'owner' 
+                            ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900' 
+                            : u.role === 'admin'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}>
+                          {u.role === 'owner' && '👑 '}
+                          {u.role === 'admin' && '🛡️ '}
+                          {u.role === 'user' && '👤 '}
+                          {u.role === 'owner' ? 'Владелец' : u.role === 'admin' ? 'Администратор' : 'Пользователь'}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       {u.isBlocked ? (
-                        <span className="text-red-600 font-semibold">Заблокирован</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                          🚫 Заблокирован
+                        </span>
                       ) : (
-                        <span className="text-green-600 font-semibold">Активен</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                          ✅ Активен
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      {u.nick !== 'sakeva_owner' && (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() =>
-                            blockUserMutation.mutate({ id: String(u.id), isBlocked: !u.isBlocked })
-                          }
-                          className={`px-4 py-1 rounded ${
-                            u.isBlocked
-                              ? 'bg-green-500 hover:bg-green-600'
-                              : 'bg-red-500 hover:bg-red-600'
-                          } text-white transition`}
-                        >
-                          {u.isBlocked ? 'Разблокировать' : 'Заблокировать'}
-                        </motion.button>
-                      )}
+                      <div className="flex items-center justify-center gap-2">
+                        {u.nick !== 'sakeva_owner' && u.nick !== 'Mexa' && (
+                          <>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() =>
+                                blockUserMutation.mutate({ id: String(u.id), isBlocked: !u.isBlocked })
+                              }
+                              className={`px-4 py-2 rounded-lg font-semibold ${
+                                u.isBlocked
+                                  ? 'bg-green-500 hover:bg-green-600'
+                                  : 'bg-yellow-500 hover:bg-yellow-600'
+                              } text-white transition shadow-md`}
+                            >
+                              {u.isBlocked ? '✓ Разблокировать' : '🚫 Заблокировать'}
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (confirm(`Удалить пользователя ${u.nick}? Это действие необратимо!`)) {
+                                  deleteUserMutation.mutate(String(u.id));
+                                }
+                              }}
+                              className="px-4 py-2 rounded-lg font-semibold bg-red-500 hover:bg-red-600 text-white transition shadow-md"
+                            >
+                              🗑️ Удалить
+                            </motion.button>
+                          </>
+                        )}
+                      </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>

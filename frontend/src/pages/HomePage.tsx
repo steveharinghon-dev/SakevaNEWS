@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
             <input
               type="text"
-              placeholder="Поиск по заголовку или нику автора..."
+              placeholder="Поиск по заголовку..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-sakeva-pink/30 focus:border-sakeva-pink focus:outline-none transition"

@@ -15,7 +15,10 @@ router.get('/', async (req, res) => {
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
 
-    const whereClause: any = { status: NewsStatus.APPROVED };
+    const whereClause: any = { 
+      status: NewsStatus.APPROVED,
+      isHidden: false  // Не показываем скрытые новости
+    };
     
     if (search) {
       whereClause.title = { [Op.like]: `%${search}%` };

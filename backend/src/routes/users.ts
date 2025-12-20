@@ -85,6 +85,30 @@ router.patch('/:id/block', authenticateToken, authorizeRoles(UserRole.OWNER), as
   }
 });
 
+// Удалить пользователя (только owner)
+router.delete('/:id', authenticateToken, authorizeRoles(UserRole.OWNER), async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    // Нельзя удалить owner аккаунт
+    if (user.nick === 'Mexa' || user.nick === 'sakeva_owner') {
+      return res.status(403).json({ message: 'Нельзя удалить владельца сайта' });
+    }
+
+    await user.destroy();
+
+    res.json({ message: 'Пользователь удалён' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Ошибка удаления пользователя' });
+  }
+});
+
 // Получить статистику (только admin/owner)
 router.get('/stats', authenticateToken, authorizeRoles(UserRole.ADMIN, UserRole.OWNER), async (req, res) => {
   try {
@@ -122,9 +146,9 @@ router.get('/stats/hourly', authenticateToken, authorizeRoles(UserRole.ADMIN, Us
       raw: true
     });
 
-    // Группируем по часам
+    // Группируем по часам (МСК +3)
     const hourlyData = Array.from({ length: 24 }, (_, i) => {
-      const hour = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000).getHours();
+      const hour = (new Date(now.getTime() - (23 - i) * 60 * 60 * 1000).getHours() + 3) % 24;
       return {
         hour: `${hour}:00`,
         views: 0
@@ -166,7 +190,7 @@ router.get('/stats/news-hourly', authenticateToken, authorizeRoles(UserRole.ADMI
     });
 
     const hourlyData = Array.from({ length: 24 }, (_, i) => {
-      const hour = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000).getHours();
+      const hour = (new Date(now.getTime() - (23 - i) * 60 * 60 * 1000).getHours() + 3) % 24;
       return {
         hour: `${hour}:00`,
         posts: 0
