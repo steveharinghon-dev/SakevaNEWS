@@ -60,3 +60,17 @@ export interface Stats {
   totalNews: number;
   pendingNews: number;
 }
+
+export interface Comment {
+  id: number;
+  newsId: number;
+  userId: number;
+  username: string;
+  content: string;
+  createdAt: string;
+  user?: {
+    id: number;
+    nick: string;
+    role: 'user' | 'admin' | 'owner';
+  };
+}

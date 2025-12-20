@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { News } from '../types';
 import { FiX, FiUser, FiCalendar } from 'react-icons/fi';
+import Comments from './Comments';
 
 interface NewsModalProps {
   news: News | null;
@@ -93,6 +94,9 @@ const NewsModal: React.FC<NewsModalProps> = ({ news, isOpen, onClose }) => {
                     {news.content}
                   </p>
                 </div>
+
+                {/* Комментарии */}
+                <Comments newsId={news.id} />
               </div>
             </div>
           </motion.div>

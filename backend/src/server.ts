@@ -10,6 +10,7 @@ import authRoutes from './routes/auth';
 import newsRoutes from './routes/news';
 import usersRoutes from './routes/users';
 import analyticsRoutes from './routes/analytics';
+import commentsRoutes from './routes/comments';
 import ChatMessage from './models/ChatMessage';
 import jwt from 'jsonwebtoken';
 import validator from 'validator';
@@ -92,6 +93,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/comments', commentsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
