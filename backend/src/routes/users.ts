@@ -100,9 +100,23 @@ router.delete('/:id', authenticateToken, authorizeRoles(UserRole.OWNER), async (
       return res.status(403).json({ message: 'Нельзя удалить владельца сайта' });
     }
 
+    // Удаляем все связанные данные в правильном порядке
+    // 1. Удаляем новости пользователя (каскадно удалятся комментарии к ним)
+    await News.destroy({ where: { authorId: userId } });
+    
+    // 2. Удаляем новости, одобренные этим пользователем (обнуляем approvedById)
+    await News.update(
+      { approvedById: undefined, approvedAt: undefined },
+      { where: { approvedById: userId } }
+    );
+
+    // 3. ChatMessage имеет SET NULL, поэтому просто обновим
+    // (это происходит автоматически при удалении пользователя)
+
+    // 4. Теперь можно удалить пользователя
     await user.destroy();
 
-    res.json({ message: 'Пользователь удалён' });
+    res.json({ message: 'Пользователь и все его данные удалены' });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ message: 'Ошибка удаления пользователя' });
