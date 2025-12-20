@@ -301,9 +301,10 @@ const AdminPage: React.FC = () => {
                   >
                     <td className="px-6 py-4 font-medium text-gray-900">{u.nick}</td>
                     <td className="px-6 py-4">
-                      {u.nick !== 'sakeva_owner' && u.nick !== 'Mexa' && user?.role === 'owner' ? (
+                      {/* Показываем dropdown для смены роли только для обычных пользователей/админов */}
+                      {(u.nick !== 'sakeva_owner' && u.nick !== 'Mexa' && u.role !== 'owner' && user?.role === 'owner') ? (
                         <select
-                          value={u.role}
+                          value={u.role || 'user'}
                           onChange={(e) => changeRoleMutation.mutate({ id: String(u.id), role: e.target.value })}
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sakeva-pink focus:border-transparent transition"
                         >
@@ -311,6 +312,7 @@ const AdminPage: React.FC = () => {
                           <option value="admin">🛡️ Администратор</option>
                         </select>
                       ) : (
+                        // Показываем бейдж с ролью для owner аккаунтов или если нельзя изменить роль
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                           u.role === 'owner' 
                             ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900' 
@@ -318,10 +320,7 @@ const AdminPage: React.FC = () => {
                             ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
                             : 'bg-gray-200 text-gray-700'
                         }`}>
-                          {u.role === 'owner' && '👑 '}
-                          {u.role === 'admin' && '🛡️ '}
-                          {u.role === 'user' && '👤 '}
-                          {u.role === 'owner' ? 'Владелец' : u.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                          {u.role === 'owner' ? '👑 Владелец' : u.role === 'admin' ? '🛡️ Администратор' : '👤 Пользователь'}
                         </span>
                       )}
                     </td>
